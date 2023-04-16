@@ -11,6 +11,7 @@ app.use(bodyParser.json());
 
 const routerUsers = require('./routes/users');
 const routerCards = require('./routes/cards');
+const { ERROR_CODE_BAD_REQUEST } = require('./utils/constants');
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
 
@@ -26,7 +27,7 @@ app.use('/cards', routerCards);
 app.use('/users', routerUsers);
 
 app.use('/', (req, res) => {
-  res.send({ message: 'Not found' });
+  res.status(ERROR_CODE_BAD_REQUEST).send({ message: 'Not found' });
 });
 
 app.listen(PORT);
