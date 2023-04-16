@@ -1,60 +1,48 @@
-const { ERROR_CODE_BAD_REQUEST, ERROR_CODE_INTERNAL_SERVER, ERROR_CODE_NOT_FOUND } = require('../utils/constants');
+const BadQueryError = require('../utils/BadQueryError');
 
 const User = require('../models/user');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send(users))
-    .catch(() => {
-      res.status(ERROR_CODE_INTERNAL_SERVER).send({ message: 'Произошла ошибка' });
+    .catch((err) => {
+      next(err);
     });
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
 
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        res.status(ERROR_CODE_NOT_FOUND).send({ message: 'Пользователь по указанному id не найден' });
-        return;
+        return Promise.reject(new BadQueryError('Пользователь по указанному id не найден'));
       }
-      res.send(user);
+      return res.send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(ERROR_CODE_BAD_REQUEST).send({ message: 'Некорректный id' });
-        return;
+        next(new BadQueryError('Некоррекный id'));
       }
 
-      res.status(ERROR_CODE_INTERNAL_SERVER).send({ message: err.message });
+      next(err);
     });
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
 
   User.create({ name, about, avatar })
     .then((user) => res.send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(ERROR_CODE_BAD_REQUEST).send({ message: err.message });
-        return;
-      }
-
-      res.status(ERROR_CODE_INTERNAL_SERVER).send({ message: err.message });
-    });
+    .catch((err) => next(err));
 };
 
-module.exports.patchUser = (req, res) => {
+module.exports.patchUser = (req, res, next) => {
   const { name, about } = req.body;
   const { _id } = req.user;
 
   if (!name && !about) {
-    res.status(ERROR_CODE_BAD_REQUEST).send({
-      message: 'Тело запроса должно содержать объект типа: { name: String, about: String }',
-    });
-    return;
+    return next(new BadQueryError('Все поля длжны быть заполнены'));
   }
 
   User.findByIdAndUpdate(
@@ -68,35 +56,20 @@ module.exports.patchUser = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        res.status(ERROR_CODE_NOT_FOUND).send({ message: 'Пользователь по указанному id не найден' });
-        return;
+        return Promise.reject(new BadQueryError('Пользователь по указанному id не найден'));
       }
-      res.send(user);
+      return res.send(user);
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(ERROR_CODE_BAD_REQUEST).send({ message: err.message });
-        return;
-      }
-
-      if (err.name === 'CastError') {
-        res.status(ERROR_CODE_BAD_REQUEST).send({ message: 'Некорректный id' });
-        return;
-      }
-
-      res.status(ERROR_CODE_INTERNAL_SERVER).send({ message: err.message });
-    });
+    .catch((err) => next(err));
+  return undefined;
 };
 
-module.exports.patchAvatar = (req, res) => {
+module.exports.patchAvatar = (req, res, next) => {
   const { avatar } = req.body;
   const { _id } = req.user;
 
   if (!avatar) {
-    res.status(ERROR_CODE_BAD_REQUEST).send({
-      message: 'Тело запроса должно содержать объект типа: { avatar: URL }',
-    });
-    return;
+    return next(new BadQueryError('Все поля длжны быть заполнены'));
   }
 
   User.findByIdAndUpdate(
@@ -110,24 +83,12 @@ module.exports.patchAvatar = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        res.status(ERROR_CODE_NOT_FOUND).send({ message: 'Пользователь по указанному id не найден' });
-        return;
+        return Promise.reject(new BadQueryError('Пользователь по указанному id не найден'));
       }
-      res.send(user);
+      return res.send(user);
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(ERROR_CODE_BAD_REQUEST).send({ message: err.message });
-        return;
-      }
-
-      if (err.name === 'CastError') {
-        res.status(ERROR_CODE_BAD_REQUEST).send({ message: 'Некорректный id' });
-        return;
-      }
-
-      res.status(ERROR_CODE_INTERNAL_SERVER).send({ message: err.message });
-    });
+    .catch((err) => next(err));
+  return undefined;
 };
 
 /* module.exports.patchUser = async (req, res) => {

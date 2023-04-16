@@ -3,6 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
+const errorHandler = require('./utils/errorHandler');
+
 const { PORT = 3000 } = process.env;
 const app = express();
 
@@ -11,7 +13,6 @@ app.use(bodyParser.json());
 
 const routerUsers = require('./routes/users');
 const routerCards = require('./routes/cards');
-const { ERROR_CODE_NOT_FOUND } = require('./utils/constants');
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
 
@@ -26,8 +27,10 @@ app.use((req, res, next) => {
 app.use('/cards', routerCards);
 app.use('/users', routerUsers);
 
-app.use('/', (req, res) => {
-  res.status(ERROR_CODE_NOT_FOUND).send({ message: 'Not found' });
+app.use((req, res) => {
+  res.status(404).send({ message: 'Некорректный запрос' });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT);
