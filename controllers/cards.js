@@ -1,4 +1,4 @@
-const BadQueryError = require('../utils/BadQueryError');
+const UnexistedDataError = require('../utils/UnexistedDataError');
 
 const Card = require('../models/card');
 
@@ -29,7 +29,7 @@ module.exports.deleteCard = (req, res, next) => {
     .populate('owner likes')
     .then((card) => {
       if (!card) {
-        return Promise.reject(new BadQueryError('Карточка с таким id не найдена'));
+        return Promise.reject(new UnexistedDataError('Карточка с таким id не найдена'));
       }
 
       if (card.owner._id.toString() !== user._id.toString()) {
@@ -53,7 +53,7 @@ module.exports.likeCard = (req, res, next) => {
     .then((card) => res.send(card.likes))
     .catch((err) => {
       if (Object.keys(err).length === 0) {
-        next(new BadQueryError('Карточка с таким id не найдена'));
+        next(new UnexistedDataError('Карточка с таким id не найдена'));
       } else {
         next(err);
       }
@@ -69,7 +69,7 @@ module.exports.disLikeCard = (req, res, next) => {
     .then((card) => res.send(card.likes))
     .catch((err) => {
       if (Object.keys(err).length === 0) {
-        next(new BadQueryError('Карточка с таким id не найдена'));
+        next(new UnexistedDataError('Карточка с таким id не найдена'));
       } else {
         next(err);
       }

@@ -1,4 +1,5 @@
 const BadQueryError = require('../utils/BadQueryError');
+const UnexistedDataError = require('../utils/UnexistedDataError');
 
 const User = require('../models/user');
 
@@ -16,7 +17,7 @@ module.exports.getUserById = (req, res, next) => {
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        return Promise.reject(new BadQueryError('Пользователь по указанному id не найден'));
+        return Promise.reject(new UnexistedDataError('Пользователь по указанному id не найден'));
       }
       return res.send(user);
     })
@@ -56,7 +57,7 @@ module.exports.patchUser = (req, res, next) => {
   )
     .then((user) => {
       if (!user) {
-        return Promise.reject(new BadQueryError('Пользователь по указанному id не найден'));
+        return Promise.reject(new UnexistedDataError('Пользователь по указанному id не найден'));
       }
       return res.send(user);
     })
@@ -83,7 +84,7 @@ module.exports.patchAvatar = (req, res, next) => {
   )
     .then((user) => {
       if (!user) {
-        return Promise.reject(new BadQueryError('Пользователь по указанному id не найден'));
+        return Promise.reject(new UnexistedDataError('Пользователь по указанному id не найден'));
       }
       return res.send(user);
     })
