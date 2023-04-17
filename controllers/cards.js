@@ -16,7 +16,7 @@ module.exports.createCard = (req, res, next) => {
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
-    .populate('owner likes')
+    .populate('owner', 'likes')
     .then((cards) => res.send(cards))
     .catch((err) => next(err));
 };
@@ -26,7 +26,7 @@ module.exports.deleteCard = (req, res, next) => {
   const { user } = req;
 
   Card.findById(cardId)
-    .populate('owner likes')
+    .populate('owner', 'likes')
     .then((card) => {
       if (!card) {
         return Promise.reject(new UnexistedDataError('Карточка с таким id не найдена'));
@@ -36,8 +36,7 @@ module.exports.deleteCard = (req, res, next) => {
         return Promise.reject(new Error('Вы не являетесь владельцем этой карточки!'));
       }
 
-      card.deleteOne();
-      return res.send({ message: `Card: ${cardId} is no more! (Удалена успешно)` });
+      return card.deleteOne().then(() => res.send({ message: `Card: ${cardId} is no more! (Удалена успешно)` }));
     })
     .catch((err) => {
       next(err);
@@ -49,14 +48,15 @@ module.exports.likeCard = (req, res, next) => {
   const { user } = req;
 
   Card.findByIdAndUpdate(cardId, { $addToSet: { likes: user._id } }, { new: true })
-    .populate('owner likes')
-    .then((card) => res.send(card.likes))
-    .catch((err) => {
-      if (Object.keys(err).length === 0) {
-        next(new UnexistedDataError('Карточка с таким id не найдена'));
-      } else {
-        next(err);
+    .populate('owner', 'likes')
+    .then((card) => {
+      if (!card) {
+        return Promise.reject(new UnexistedDataError('Карточка с таким id не найдена'));
       }
+      return res.send(card.likes);
+    })
+    .catch((err) => {
+      next(err);
     });
 };
 
@@ -65,13 +65,14 @@ module.exports.disLikeCard = (req, res, next) => {
   const { user } = req;
 
   Card.findByIdAndUpdate(cardId, { $pull: { likes: user._id } }, { new: true })
-    .populate('owner likes')
-    .then((card) => res.send(card.likes))
-    .catch((err) => {
-      if (Object.keys(err).length === 0) {
-        next(new UnexistedDataError('Карточка с таким id не найдена'));
-      } else {
-        next(err);
+    .populate('owner', 'likes')
+    .then((card) => {
+      if (!card) {
+        return Promise.reject(new UnexistedDataError('Карточка с таким id не найдена'));
       }
+      return res.send(card.likes);
+    })
+    .catch((err) => {
+      next(err);
     });
 };
