@@ -1,21 +1,29 @@
 const express = require('express');
+const mongoose = require('mongoose');
+
+require('dotenv').config();
 
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const {
+  celebrate, Joi, errors, Segments,
+} = require('celebrate');
 
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
+const auth = require('./middlewares/auth');
 
 const errorHandler = require('./utils/errorHandler');
+const {
+  createUser,
+  login,
+} = require('./controllers/users');
+
+const routerUsers = require('./routes/users');
+const routerCards = require('./routes/cards');
 
 const { PORT = 3000 } = process.env;
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-const routerUsers = require('./routes/users');
-const routerCards = require('./routes/cards');
+app.use(express.json());
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
 
@@ -30,16 +38,36 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(helmet());
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '643a3ac268e0df9232ade602', // вставьте сюда _id созданного в предыдущем пункте пользователя
-  };
+app.post('/signin', celebrate({
+  [Segments.BODY]: Joi.object().keys({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  }),
+}), login);
 
-  next();
-});
+app.post('/signup', celebrate({
+  [Segments.BODY]: Joi.object().keys({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+    name: Joi.string().min(2).max(30),
+    about: Joi.string().min(2).max(30),
+    avatar: Joi.string().regex(/^https?:\/\/[a-zA-Z\d]+[-a-zA-Z\d.]*\.[a-zA-Z]{2,}(\/[-a-zA-Z@:%._+~#=&?\d]+)*\/*/i),
+  }),
+}), createUser);
 
-app.use('/cards', routerCards);
-app.use('/users', routerUsers);
+app.use('/cards', celebrate({
+  [Segments.HEADERS]: Joi.object().keys({
+    authorization: Joi.string().required(),
+  }).unknown(true),
+}), auth, routerCards);
+
+app.use('/users', celebrate({
+  [Segments.HEADERS]: Joi.object().keys({
+    authorization: Joi.string().required(),
+  }).unknown(true),
+}), auth, routerUsers);
+
+app.use(errors());
 
 app.use((req, res) => {
   res.status(404).send({ message: 'Некорректный запрос' });
