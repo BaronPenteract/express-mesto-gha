@@ -1,4 +1,4 @@
-const { UnexistedDataError, BadQueryError } = require('../utils/errors');
+const { UnexistedDataError, ForbiddenError } = require('../utils/errors');
 
 const Card = require('../models/card');
 
@@ -33,7 +33,7 @@ module.exports.deleteCard = (req, res, next) => {
       }
 
       if (card.owner._id.toString() !== user._id.toString()) {
-        return Promise.reject(new BadQueryError('Вы не являетесь владельцем этой карточки!'));
+        return Promise.reject(new ForbiddenError('Вы не являетесь владельцем этой карточки!'));
       }
 
       return card.deleteOne().then(() => res.send({ message: `Card: ${cardId} is no more! (Удалена успешно)` }));

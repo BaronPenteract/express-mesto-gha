@@ -55,17 +55,9 @@ app.post('/signup', celebrate({
   }),
 }), createUser);
 
-app.use('/cards', celebrate({
-  [Segments.HEADERS]: Joi.object().keys({
-    authorization: Joi.string().required(),
-  }).unknown(true),
-}), auth, routerCards);
+app.use('/cards', auth, routerCards);
 
-app.use('/users', celebrate({
-  [Segments.HEADERS]: Joi.object().keys({
-    authorization: Joi.string().required(),
-  }).unknown(true),
-}), auth, routerUsers);
+app.use('/users', auth, routerUsers);
 
 app.use(errors());
 

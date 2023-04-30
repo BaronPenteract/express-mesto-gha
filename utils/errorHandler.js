@@ -1,9 +1,18 @@
 const {
   ERROR_CODE_NOT_FOUND,
-  ERROR_CODE_BAD_REQUEST, ERROR_CODE_INTERNAL_SERVER, ERROR_CODE_UNAUTHORIZED, ERROR_CODE_CONFLICT,
+  ERROR_CODE_FORBIDDEN,
+  ERROR_CODE_BAD_REQUEST,
+  ERROR_CODE_INTERNAL_SERVER,
+  ERROR_CODE_UNAUTHORIZED,
+  ERROR_CODE_CONFLICT,
 } = require('./constants');
 
-const { BadQueryError, BadLoginDataError, UnexistedDataError } = require('./errors');
+const {
+  BadQueryError,
+  BadLoginDataError,
+  UnexistedDataError,
+  ForbiddenError,
+} = require('./errors');
 
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
@@ -19,6 +28,11 @@ const errorHandler = (err, req, res, next) => {
 
   if (err instanceof BadLoginDataError) {
     res.status(ERROR_CODE_UNAUTHORIZED).send({ message: err.message });
+    return;
+  }
+
+  if (err instanceof ForbiddenError) {
+    res.status(ERROR_CODE_FORBIDDEN).send({ message: err.message });
     return;
   }
 
