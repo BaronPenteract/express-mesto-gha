@@ -17,6 +17,9 @@ const {
   login,
 } = require('./controllers/users');
 
+const { URL_REGEXP } = require('./utils/constants');
+const { NotFoundError } = require('./utils/errors');
+
 const routerUsers = require('./routes/users');
 const routerCards = require('./routes/cards');
 
@@ -51,7 +54,7 @@ app.post('/signup', celebrate({
     password: Joi.string().required(),
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().regex(/^https?:\/\/[a-zA-Z\d]+[-a-zA-Z\d.]*\.[a-zA-Z]{2,}(\/[-a-zA-Z@:%._+~#=&?\d]+)*\/*/i),
+    avatar: Joi.string().regex(URL_REGEXP),
   }),
 }), createUser);
 
@@ -61,8 +64,8 @@ app.use('/users', auth, routerUsers);
 
 app.use(errors());
 
-app.use((req, res) => {
-  res.status(404).send({ message: 'Некорректный запрос' });
+app.use(auth, (req, res, next) => {
+  next(new NotFoundError('Некорректный запрос'));
 });
 
 app.use(errorHandler);

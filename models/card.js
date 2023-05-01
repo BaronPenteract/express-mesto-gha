@@ -1,5 +1,6 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 const mongoose = require('mongoose');
+
+const { URL_REGEXP } = require('../utils/constants');
 
 const cardSchema = new mongoose.Schema({
   name: {
@@ -11,6 +12,10 @@ const cardSchema = new mongoose.Schema({
   link: {
     type: String,
     required: [true, 'Поле обязательное'],
+    validate: {
+      validator: (url) => URL_REGEXP.test(url),
+      message: ({ VALUE }) => `${VALUE} не является действительным URL`,
+    },
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,

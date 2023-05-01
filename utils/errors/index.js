@@ -1,8 +1,9 @@
-const BadQueryError = require('./BadQueryError');
-const BadLoginDataError = require('./BadLoginDataError');
+const BadRequestError = require('./BadRequestError');
+const UnauthorizedError = require('./UnauthorizedError');
 const ForbiddenError = require('./ForbiddenError');
-const UnexistedDataError = require('./UnexistedDataError');
+const NotFoundError = require('./NotFoundError');
+const InternalServerError = require('./InternalServerError');
 
 module.exports = {
-  BadQueryError, BadLoginDataError, UnexistedDataError, ForbiddenError,
+  BadRequestError, UnauthorizedError, NotFoundError, ForbiddenError, InternalServerError,
 };

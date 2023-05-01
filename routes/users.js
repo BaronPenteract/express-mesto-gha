@@ -3,6 +3,8 @@ const {
   celebrate, Joi, Segments,
 } = require('celebrate');
 
+const { URL_REGEXP } = require('../utils/constants');
+
 const {
   getUsers,
   getUserById,
@@ -14,7 +16,7 @@ router.get('/', getUsers);
 router.get('/me', getUserById);
 router.get('/:userId', celebrate({
   [Segments.PARAMS]: Joi.object().keys({
-    userId: Joi.string().alphanum().length(24),
+    userId: Joi.string().hex().length(24),
   }),
 }), getUserById);
 router.patch('/me', celebrate({
@@ -25,7 +27,7 @@ router.patch('/me', celebrate({
 }), patchUser);
 router.patch('/me/avatar', celebrate({
   [Segments.BODY]: Joi.object().keys({
-    avatar: Joi.string().regex(/^https?:\/\/[a-zA-Z\d]+[-a-zA-Z\d.]*\.[a-zA-Z]{2,}(\/[-a-zA-Z@:%._+~#=&?\d]+)*\/*/i).required(),
+    avatar: Joi.string().regex(URL_REGEXP).required(),
   }),
 }), patchAvatar);
 

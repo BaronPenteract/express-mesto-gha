@@ -1,6 +1,8 @@
 const validator = require('validator');
 const mongoose = require('mongoose');
 
+const { URL_REGEXP } = require('../utils/constants');
+
 const userSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -34,6 +36,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default:
       'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    validate: {
+      validator: (url) => URL_REGEXP.test(url),
+      message: ({ VALUE }) => `${VALUE} не является действительным URL`,
+    },
   },
 }, { toJSON: { useProjection: true }, toObject: { useProjection: true } });
 

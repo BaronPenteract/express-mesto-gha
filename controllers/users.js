@@ -1,6 +1,9 @@
 const bcrypt = require('bcryptjs');
 
-const { BadQueryError, BadLoginDataError, UnexistedDataError } = require('../utils/errors');
+const {
+  BadRequestError, NotFoundError, UnauthorizedError, InternalServerError,
+} = require('../utils/errors');
+
 const { generateToken } = require('../utils/token');
 
 const User = require('../models/user');
@@ -8,8 +11,8 @@ const User = require('../models/user');
 module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.json(users))
-    .catch((err) => {
-      next(err);
+    .catch(() => {
+      next(new InternalServerError('Что-то пошло не так.'));
     });
 };
 
@@ -22,21 +25,19 @@ module.exports.getUserById = (req, res, next) => {
     userId = req.params.userId;
   }
 
-  /* const { userId } = req.params; */
-
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        return Promise.reject(new UnexistedDataError('Пользователь по указанному id не найден.'));
+        return next(new NotFoundError('Пользователь по указанному id не найден.'));
       }
       return res.json(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return next(new BadQueryError('Некоррекный id.'));
+        return next(new BadRequestError('Некоррекный id.'));
       }
 
-      return next(err);
+      return next(new InternalServerError('Что-то пошло не так.'));
     });
 };
 
@@ -44,10 +45,6 @@ module.exports.createUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  /*
-  if (!validator.isEmail(email) || !password) {
-    throw new BadQueryError('Некоррекный e-mail или пароль.');
-  } */
 
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
@@ -58,7 +55,13 @@ module.exports.createUser = (req, res, next) => {
       password: hash,
     })
       .then((user) => res.json(user)))
-    .catch((err) => next(err));
+    .catch((err) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new BadRequestError('Некорректные данные.'));
+      } else {
+        next(new InternalServerError('Что-то пошло не так.'));
+      }
+    });
 };
 
 module.exports.patchUser = (req, res, next) => {
@@ -76,11 +79,17 @@ module.exports.patchUser = (req, res, next) => {
   )
     .then((user) => {
       if (!user) {
-        return Promise.reject(new UnexistedDataError('Пользователь по указанному id не найден.'));
+        return next(new NotFoundError('Пользователь по указанному id не найден.'));
       }
       return res.json(user);
     })
-    .catch((err) => next(err));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Некорректный id.'));
+      } else {
+        next(new InternalServerError('Что-то пошло не так.'));
+      }
+    });
 };
 
 module.exports.patchAvatar = (req, res, next) => {
@@ -88,7 +97,7 @@ module.exports.patchAvatar = (req, res, next) => {
   const { _id } = req.user;
 
   if (!avatar) {
-    next(new BadQueryError('Все поля длжны быть заполнены.'));
+    next(new BadRequestError('Все поля длжны быть заполнены.'));
   } else {
     User.findByIdAndUpdate(
       _id,
@@ -101,31 +110,33 @@ module.exports.patchAvatar = (req, res, next) => {
     )
       .then((user) => {
         if (!user) {
-          return Promise.reject(new UnexistedDataError('Пользователь по указанному id не найден.'));
+          return next(new NotFoundError('Пользователь по указанному id не найден.'));
         }
         return res.json(user);
       })
-      .catch((err) => next(err));
+      .catch((err) => {
+        if (err.name === 'CastError') {
+          next(new BadRequestError('Некорректный id.'));
+        } else {
+          next(new InternalServerError('Что-то пошло не так.'));
+        }
+      });
   }
 };
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
-  /* if (!email || !password) {
-    throw new BadQueryError('Поля обязательны для заполнения.');
-  } */
-
   User.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
-        throw new BadLoginDataError('Неправильные почта или пароль.');
+        next(new UnauthorizedError('Неправильные почта или пароль.'));
       }
 
       return bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            throw new BadLoginDataError('Неправильные почта или пароль.');
+            next(new UnauthorizedError('Неправильные почта или пароль.'));
           }
 
           const token = generateToken(
@@ -136,5 +147,7 @@ module.exports.login = (req, res, next) => {
           res.json({ token });
         });
     })
-    .catch(next);
+    .catch(() => {
+      next(new InternalServerError('Что-то пошло не так.'));
+    });
 };

@@ -1,22 +1,24 @@
 const { checkToken } = require('../utils/token');
-const { BadLoginDataError } = require('../utils/errors');
+const { UnauthorizedError } = require('../utils/errors');
 
 const auth = (req, res, next) => {
   const { authorization } = req.headers;
-  if (!authorization) {
-    throw new BadLoginDataError('Доступ запрещен.');
+
+  try {
+    const token = authorization.replace('Bearer ', '');
+
+    const payload = checkToken(token);
+
+    if (!payload) {
+      throw new UnauthorizedError('Доступ запрещен.');
+    }
+
+    req.user = payload;
+
+    next();
+  } catch (err) {
+    next(new UnauthorizedError('Доступ запрещен.'));
   }
-  const token = authorization.replace('Bearer ', '');
-
-  const payload = checkToken(token);
-
-  if (!payload) {
-    throw new BadLoginDataError('Доступ запрещен.');
-  }
-
-  req.user = payload;
-
-  next();
 };
 
 module.exports = auth;
