@@ -57,12 +57,14 @@ module.exports.createUser = (req, res, next) => {
       .then((user) => res.json(user)))
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        next(new BadRequestError('Некорректные данные.'));
-      } else if (err.code === 11000) {
-        next(new ConflictError('Пользователь с таким e-mail уже существует.'));
-      } else {
-        next(new InternalServerError('Что-то пошло не так.'));
+        return next(new BadRequestError('Некорректные данные.'));
       }
+
+      if (err.code === 11000) {
+        return next(new ConflictError('Пользователь с таким e-mail уже существует.'));
+      }
+
+      return next(new InternalServerError('Что-то пошло не так.'));
     });
 };
 
