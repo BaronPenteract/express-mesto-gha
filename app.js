@@ -17,6 +17,8 @@ const {
   login,
 } = require('./controllers/users');
 
+const { requestLogger, errorLogger } = require('./middlewares/logger');
+
 const { URL_REGEXP } = require('./utils/constants');
 const { NotFoundError } = require('./utils/errors');
 
@@ -41,6 +43,8 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(helmet());
 
+app.use(requestLogger);
+
 app.post('/signin', celebrate({
   [Segments.BODY]: Joi.object().keys({
     email: Joi.string().email().required(),
@@ -59,8 +63,9 @@ app.post('/signup', celebrate({
 }), createUser);
 
 app.use('/cards', auth, routerCards);
-
 app.use('/users', auth, routerUsers);
+
+app.use(errorLogger);
 
 app.use(errors());
 
